@@ -21,36 +21,38 @@ import android.widget.TextView;
 import com.steveq.geometer.gps.DistanceMeterService;
 import com.steveq.geometer.obs_pattern.Observer;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity implements Observer{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 10;
-    private Button mLocateButton;
-    private Button mStopButton;
-    private TextView mLatitudeTextView;
-    private TextView mLongitudeTextView;
+
     private ServiceConnection mConnection;
     private DistanceMeterService mDistanceMeterService;
     private boolean isBound = false;
+    private boolean isAllowed = false;
     private Intent startServiceIntent;
+
+    @BindView(R.id.locateButton) Button mLocateButton;
+    @BindView(R.id.stopButton) Button mStopButton;
+    @BindView(R.id.latitudeTextView) TextView mLatitudeTextView;
+    @BindView(R.id.longitudeTextView) TextView mLongitudeTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mLocateButton = (Button) findViewById(R.id.locateButton);
-        mStopButton = (Button) findViewById(R.id.stopButton);
-        mLatitudeTextView = (TextView) findViewById(R.id.latitudeTextView);
-        mLongitudeTextView = (TextView) findViewById(R.id.longitudeTextView);
+        ButterKnife.bind(MainActivity.this);
+        requestPermission();
 
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
-                mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder)service).getDistanceMeterService();
+                mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 mDistanceMeterService.addObserver(MainActivity.this);
                 isBound = true;
-                Log.d(TAG, "Service connected");
             }
 
             @Override
@@ -59,34 +61,16 @@ public class MainActivity extends AppCompatActivity implements Observer{
             }
         };
 
-        startServiceIntent = new Intent(this, DistanceMeterService.class);
-
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSION_ACCESS_FINE_LOCATION);
-        } else {
-            bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
-        }
-
-
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mDistanceMeterService.isProvider()) {
+                    mLongitudeTextView.setText("0.00");
+                    mLatitudeTextView.setText("0.00");
                     mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
                 } else {
                     showAlert();
                 }
-//                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//
-//                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-//                            MY_PERMISSION_ACCESS_FINE_LOCATION);
-//
-//                    return;
-//                } else {
-//                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, MainActivity.this);
-//                }
             }
         });
 
@@ -99,13 +83,31 @@ public class MainActivity extends AppCompatActivity implements Observer{
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION){
+    protected void onResume() {
+        super.onResume();
+        if (isAllowed) {
+            startServiceIntent = new Intent(this, DistanceMeterService.class);
             bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
         }
     }
 
+    private void requestPermission() {
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSION_ACCESS_FINE_LOCATION);
+        } else {
+            isAllowed = true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION){
+            isAllowed = true;
+        }
+    }
     @Override
     protected void onStop() {
         super.onStop();
@@ -116,16 +118,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
         }
     }
 
-
-
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        switch (requestCode) {
-//            case MY_PERMISSION_ACCESS_FINE_LOCATION:
-//                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, this);
-//                return;
-//        }
-//    }
     private void showAlert() {
         final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Enable Location")

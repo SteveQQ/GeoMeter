@@ -45,7 +45,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         configureGPS();
         mObservers = new ArrayList<>();
-        //startLocationUpdates(MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES);
     }
 
     @Override
@@ -112,8 +111,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "latitude: " + location.getLatitude());
-        Log.d(TAG, "longitude: " + location.getLongitude());
         this.latitude = location.getLatitude();
         this.longitude = location.getLongitude();
         notifyObservers();
