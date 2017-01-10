@@ -32,13 +32,14 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private ServiceConnection mConnection;
     private DistanceMeterService mDistanceMeterService;
     private boolean isBound = false;
-    private boolean isAllowed = false;
+    public static boolean isAllowed = false;
     private Intent startServiceIntent;
 
     @BindView(R.id.locateButton) Button mLocateButton;
     @BindView(R.id.stopButton) Button mStopButton;
     @BindView(R.id.latitudeTextView) TextView mLatitudeTextView;
     @BindView(R.id.longitudeTextView) TextView mLongitudeTextView;
+    @BindView(R.id.mapButton) Button mMapButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +81,16 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 mDistanceMeterService.stopUpdates();
             }
         });
+
+        mMapButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                intent.putExtra("initial_lat", mDistanceMeterService.getLatitude());
+                intent.putExtra("initial_long", mDistanceMeterService.getLongitude());
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -108,11 +119,13 @@ public class MainActivity extends AppCompatActivity implements Observer{
             isAllowed = true;
         }
     }
+
     @Override
     protected void onStop() {
         super.onStop();
         if (isBound) {
             unbindService(mConnection);
+            mDistanceMeterService.deleteObserver(this);
             Log.d(TAG, "Service unbind");
             isBound = false;
         }

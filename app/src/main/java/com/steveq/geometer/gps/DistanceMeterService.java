@@ -70,6 +70,14 @@ public class DistanceMeterService extends Service implements LocationListener, O
         }
     }
 
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
     public void configureGPS() {
         Criteria configuration = buildCriteria();
         List<String> providers = mLocationManager.getProviders(configuration, true);
@@ -88,6 +96,10 @@ public class DistanceMeterService extends Service implements LocationListener, O
 //        criteria.setPowerRequirement(Criteria.POWER_LOW);
 
         return criteria;
+    }
+
+    public boolean startLocationUpdates(){
+        return startLocationUpdates(MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES);
     }
 
     public boolean startLocationUpdates(int time, int distance){
@@ -114,6 +126,8 @@ public class DistanceMeterService extends Service implements LocationListener, O
         this.latitude = location.getLatitude();
         this.longitude = location.getLongitude();
         notifyObservers();
+        Log.d(TAG, "latitude: " + latitude);
+        Log.d(TAG, "longitude: " + longitude);
     }
 
     @Override
