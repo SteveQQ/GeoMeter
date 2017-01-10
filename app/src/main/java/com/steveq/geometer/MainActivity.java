@@ -16,18 +16,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.steveq.geometer.gps.DistanceMeterService;
+import com.steveq.geometer.obs_pattern.Observer;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Observer{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 10;
     private Button mLocateButton;
     private Button mStopButton;
+    private TextView mLatitudeTextView;
+    private TextView mLongitudeTextView;
     private ServiceConnection mConnection;
     private DistanceMeterService mDistanceMeterService;
-    private boolean isBound;
+    private boolean isBound = false;
     private Intent startServiceIntent;
 
     @Override
@@ -37,16 +41,21 @@ public class MainActivity extends AppCompatActivity {
 
         mLocateButton = (Button) findViewById(R.id.locateButton);
         mStopButton = (Button) findViewById(R.id.stopButton);
+        mLatitudeTextView = (TextView) findViewById(R.id.latitudeTextView);
+        mLongitudeTextView = (TextView) findViewById(R.id.longitudeTextView);
 
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder)service).getDistanceMeterService();
+                mDistanceMeterService.addObserver(MainActivity.this);
+                isBound = true;
                 Log.d(TAG, "Service connected");
             }
 
             @Override
             public void onServiceDisconnected(ComponentName name) {
+                isBound = false;
             }
         };
 
@@ -100,8 +109,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        unbindService(mConnection);
-        Log.d(TAG, "Service unbind");
+        if (isBound) {
+            unbindService(mConnection);
+            Log.d(TAG, "Service unbind");
+            isBound = false;
+        }
     }
 
 
@@ -133,5 +145,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .show();
+    }
+
+    @Override
+    public void update(double latitude, double longitude) {
+        mLatitudeTextView.setText(String.valueOf(latitude));
+        mLongitudeTextView.setText(String.valueOf(longitude));
     }
 }

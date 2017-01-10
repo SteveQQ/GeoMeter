@@ -33,6 +33,7 @@
             android:layout_height="wrap_content"
             android:text="latitude"/>
         <TextView
+            android:id="@+id/latitudeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="1000"/>
@@ -47,6 +48,7 @@
             android:layout_height="wrap_content"
             android:text="longitude"/>
         <TextView
+            android:id="@+id/longitudeTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="1000"/>

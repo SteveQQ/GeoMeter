@@ -13,9 +13,13 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.steveq.geometer.obs_pattern.Observable;
+import com.steveq.geometer.obs_pattern.Observer;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class DistanceMeterService extends Service implements LocationListener{
+public class DistanceMeterService extends Service implements LocationListener, Observable {
     private static final String TAG = DistanceMeterService.class.getSimpleName();
     private final IBinder mBinder = new DistanceMeterBinder();
     private LocationManager mLocationManager;
@@ -25,6 +29,7 @@ public class DistanceMeterService extends Service implements LocationListener{
 
     private double longitude;
     private double latitude;
+    private ArrayList<Observer> mObservers;
 
     public DistanceMeterService() {
     }
@@ -39,6 +44,7 @@ public class DistanceMeterService extends Service implements LocationListener{
         super.onCreate();
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         configureGPS();
+        mObservers = new ArrayList<>();
         //startLocationUpdates(MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES);
     }
 
@@ -47,6 +53,24 @@ public class DistanceMeterService extends Service implements LocationListener{
         super.onDestroy();
         stopUpdates();
     }
+
+    @Override
+    public void addObserver(Observer observer) {
+        mObservers.add(observer);
+    }
+
+    @Override
+    public void deleteObserver(Observer observer) {
+        mObservers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for(Observer obs : mObservers){
+            obs.update(this.latitude, this.longitude);
+        }
+    }
+
     public void configureGPS() {
         Criteria configuration = buildCriteria();
         List<String> providers = mLocationManager.getProviders(configuration, true);
@@ -86,20 +110,13 @@ public class DistanceMeterService extends Service implements LocationListener{
         return mProvider!=null;
     }
 
-    public double getLatitude(){
-        return this.latitude;
-    }
-
-    public double getLongitude(){
-        return this.longitude;
-    }
-
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "latitude: " + location.getLatitude());
         Log.d(TAG, "longitude: " + location.getLongitude());
         this.latitude = location.getLatitude();
         this.longitude = location.getLongitude();
+        notifyObservers();
     }
 
     @Override
