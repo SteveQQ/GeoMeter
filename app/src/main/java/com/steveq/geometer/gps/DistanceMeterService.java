@@ -21,6 +21,7 @@ import com.steveq.geometer.obs_pattern.Observer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
 
     private Gson gson = new Gson();
     private History mHistory;
+    private File outputJson;
 
     public DistanceMeterService() {
     }
@@ -56,6 +58,29 @@ public class DistanceMeterService extends Service implements LocationListener, O
         configureGPS();
         mObservers = new ArrayList<>();
         mHistory = new History();
+        outputJson = new File(getFilesDir(), "history_loc.json");
+        if(outputJson.exists()){
+            mHistory = readHistory(outputJson);
+        }
+    }
+
+    private History readHistory(File outputJson) {
+        try {
+            FileReader fr = new FileReader(outputJson);
+            String jsonFileContent;
+            StringBuilder builder = new StringBuilder();
+            int readChar;
+            while((readChar = fr.read()) != -1){
+                builder.append((char)readChar);
+            }
+            jsonFileContent = builder.toString();
+            return gson.fromJson(jsonFileContent, History.class);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override
@@ -143,7 +168,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
         ArrayList<com.steveq.geometer.model.Location> tempHist = mHistory.getLocationHistory();
         tempHist.add(new com.steveq.geometer.model.Location(latitude, longitude));
         mHistory.setLocationHistory(tempHist);
-        File outputJson = new File(getFilesDir(), "history_loc.json");
         Log.d(TAG, gson.toJson(mHistory));
 
         try {
@@ -155,13 +179,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        try {
-//            File outputJson = new File(getFilesDir(), "history_loc.json");
-//            Log.d(TAG, gson.toJson(mHistory));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
     }
 
     @Override
