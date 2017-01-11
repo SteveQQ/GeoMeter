@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private DistanceMeterService mDistanceMeterService;
     private boolean isBound = false;
     public static boolean isAllowed = false;
+    private boolean isRecreated = false;
     private Intent startServiceIntent;
 
     @BindView(R.id.locateButton) Button mLocateButton;
@@ -58,6 +59,13 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 mDistanceMeterService.addObserver(MainActivity.this);
                 isBound = true;
+                if(!isRecreated) {
+                    mDistanceMeterService.deleteHistory();
+                } else if(mDistanceMeterService.outputJson.exists() && isAllowed){
+                    mDistanceMeterService.startLocationUpdates();
+                    mLatitudeTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getLast().getLatitude()));
+                    mLongitudeTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getLast().getLongitude()));
+                }
             }
 
             @Override
@@ -66,10 +74,17 @@ public class MainActivity extends AppCompatActivity implements Observer{
             }
         };
 
+        startServiceIntent = new Intent(this, DistanceMeterService.class);
+        bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
+
+        if(savedInstanceState != null){
+            isRecreated = true;
+        }
+
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mDistanceMeterService.isProvider()) {
+                if(mDistanceMeterService.isProvider() && isAllowed) {
                     mLongitudeTextView.setText("0.00");
                     mLatitudeTextView.setText("0.00");
                     mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
@@ -83,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
             @Override
             public void onClick(View v) {
                 mDistanceMeterService.stopUpdates();
+                mDistanceMeterService.deleteHistory();
             }
         });
 
@@ -101,10 +117,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "Activity resumed");
-        if (isAllowed) {
-            startServiceIntent = new Intent(this, DistanceMeterService.class);
-            bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
-        }
     }
 
     @Override

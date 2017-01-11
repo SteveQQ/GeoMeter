@@ -1,6 +1,5 @@
 package com.steveq.geometer;
 
-import android.*;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -17,12 +16,9 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.steveq.geometer.gps.DistanceMeterService;
 import com.steveq.geometer.obs_pattern.Observer;
-
-import java.util.ArrayList;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, Observer {
 
@@ -130,9 +126,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Add a marker in Sydney and move the camera
         Intent intent = getIntent();
         LatLng initCurrent = new LatLng(intent.getDoubleExtra("initial_lat", 0), intent.getDoubleExtra("initial_long", 0));
-        mDistanceMeterService.startLocationUpdates();
         mMap.addMarker(new MarkerOptions().position(initCurrent).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
+        if(mDistanceMeterService.outputJson.exists()){
+            mDistanceMeterService.startLocationUpdates();
+        }
     }
 
     @Override

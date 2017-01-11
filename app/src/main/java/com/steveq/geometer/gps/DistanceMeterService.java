@@ -11,7 +11,6 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.steveq.geometer.model.History;
@@ -20,7 +19,6 @@ import com.steveq.geometer.obs_pattern.Observer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -40,8 +38,8 @@ public class DistanceMeterService extends Service implements LocationListener, O
     private ArrayList<Observer> mObservers;
 
     private Gson gson = new Gson();
-    private History mHistory;
-    private File outputJson;
+    public History mHistory;
+    public File outputJson;
 
     public DistanceMeterService() {
     }
@@ -81,6 +79,10 @@ public class DistanceMeterService extends Service implements LocationListener, O
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean deleteHistory(){
+        return outputJson.delete();
     }
 
     @Override
