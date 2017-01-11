@@ -13,9 +13,16 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.steveq.geometer.model.History;
 import com.steveq.geometer.obs_pattern.Observable;
 import com.steveq.geometer.obs_pattern.Observer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +38,9 @@ public class DistanceMeterService extends Service implements LocationListener, O
     private double latitude;
     private ArrayList<Observer> mObservers;
 
+    private Gson gson = new Gson();
+    private History mHistory;
+
     public DistanceMeterService() {
     }
 
@@ -45,6 +55,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         configureGPS();
         mObservers = new ArrayList<>();
+        mHistory = new History();
     }
 
     @Override
@@ -128,6 +139,29 @@ public class DistanceMeterService extends Service implements LocationListener, O
         notifyObservers();
         Log.d(TAG, "latitude: " + latitude);
         Log.d(TAG, "longitude: " + longitude);
+
+        ArrayList<com.steveq.geometer.model.Location> tempHist = mHistory.getLocationHistory();
+        tempHist.add(new com.steveq.geometer.model.Location(latitude, longitude));
+        mHistory.setLocationHistory(tempHist);
+        File outputJson = new File(getFilesDir(), "history_loc.json");
+        Log.d(TAG, gson.toJson(mHistory));
+
+        try {
+            FileWriter fw = new FileWriter(outputJson);
+            fw.write(gson.toJson(mHistory));
+            fw.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+//        try {
+//            File outputJson = new File(getFilesDir(), "history_loc.json");
+//            Log.d(TAG, gson.toJson(mHistory));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
     }
 
     @Override
