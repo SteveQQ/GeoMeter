@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 10;
+    public static final int LOCATION_AUTO_START = 20;
 
     private ServiceConnection mConnection;
     private DistanceMeterService mDistanceMeterService;
@@ -48,9 +49,12 @@ public class MainActivity extends AppCompatActivity implements Observer{
         ButterKnife.bind(MainActivity.this);
         requestPermission();
 
+        Log.d(TAG, "Activity created");
+
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
+                Log.d(TAG, "Service connected");
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 mDistanceMeterService.addObserver(MainActivity.this);
                 isBound = true;
@@ -88,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
                 intent.putExtra("initial_lat", mDistanceMeterService.getLatitude());
                 intent.putExtra("initial_long", mDistanceMeterService.getLongitude());
-                startActivity(intent);
+                startActivityForResult(intent, LOCATION_AUTO_START);
             }
         });
     }
@@ -96,9 +100,20 @@ public class MainActivity extends AppCompatActivity implements Observer{
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "Activity resumed");
         if (isAllowed) {
             startServiceIntent = new Intent(this, DistanceMeterService.class);
             bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == LOCATION_AUTO_START) {
+            if (resultCode == RESULT_OK) {
+                mDistanceMeterService.startLocationUpdates();
+            }
         }
     }
 

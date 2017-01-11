@@ -76,6 +76,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (isBound) {
+            unbindService(mConnection);
+            mDistanceMeterService.deleteObserver(this);
+            Log.d(TAG, "Service unbind");
+            isBound = false;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent resultIntent = new Intent();
+        setResult(RESULT_OK, resultIntent);
+        super.onBackPressed();
+    }
+
     private void requestPermission() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
