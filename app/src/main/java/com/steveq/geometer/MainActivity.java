@@ -34,14 +34,18 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private DistanceMeterService mDistanceMeterService;
     private boolean isBound = false;
     public static boolean isAllowed = false;
-    private boolean isRecreated = false;
     private Intent startServiceIntent;
+    private boolean isRunning = false;
+    private static String RUNNING_STATE = "RUNNING_STATE";
+    private static String LAST_LATITUDE = "LAST_LATITUDE";
+    private static String LAST_LONGITUDE = "LAST_LONGITUDE";
 
     @BindView(R.id.locateButton) Button mLocateButton;
     @BindView(R.id.stopButton) Button mStopButton;
     @BindView(R.id.latitudeTextView) TextView mLatitudeTextView;
     @BindView(R.id.longitudeTextView) TextView mLongitudeTextView;
     @BindView(R.id.mapButton) Button mMapButton;
+    @BindView(R.id.resetButton) Button mResetButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,22 +53,22 @@ public class MainActivity extends AppCompatActivity implements Observer{
         setContentView(R.layout.activity_main);
         ButterKnife.bind(MainActivity.this);
         requestPermission();
-
-        Log.d(TAG, "Activity created");
+        mLongitudeTextView.setText("0.00");
+        mLatitudeTextView.setText("0.00");
 
         mConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName name, IBinder service) {
                 Log.d(TAG, "Service connected");
+
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
-                mDistanceMeterService.addObserver(MainActivity.this);
                 isBound = true;
-                if(!isRecreated) {
-                    mDistanceMeterService.deleteHistory();
-                } else if(mDistanceMeterService.outputJson.exists() && isAllowed){
+                if (mDistanceMeterService != null) {
+                    mDistanceMeterService.configureGPS();
+                }
+                if(mDistanceMeterService.outputJson.exists() && isAllowed){
+                    mDistanceMeterService.addObserver(MainActivity.this);
                     mDistanceMeterService.startLocationUpdates();
-                    mLatitudeTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getLast().getLatitude()));
-                    mLongitudeTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getLast().getLongitude()));
                 }
             }
 
@@ -74,20 +78,21 @@ public class MainActivity extends AppCompatActivity implements Observer{
             }
         };
 
-        startServiceIntent = new Intent(this, DistanceMeterService.class);
-        bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
-
         if(savedInstanceState != null){
-            isRecreated = true;
+            double lastLatitude = savedInstanceState.getDouble(LAST_LATITUDE);
+            double lastLongitude = savedInstanceState.getDouble(LAST_LONGITUDE);
+            mLatitudeTextView.setText(String.valueOf(lastLatitude));
+            mLongitudeTextView.setText(String.valueOf(lastLongitude));
+            isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
         }
 
         mLocateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(mDistanceMeterService.isProvider() && isAllowed) {
-                    mLongitudeTextView.setText("0.00");
-                    mLatitudeTextView.setText("0.00");
+                    mDistanceMeterService.addObserver(MainActivity.this);
                     mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
+                    isRunning = true;
                 } else {
                     showAlert();
                 }
@@ -98,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
             @Override
             public void onClick(View v) {
                 mDistanceMeterService.stopUpdates();
-                mDistanceMeterService.deleteHistory();
+                isRunning = false;
             }
         });
 
@@ -111,12 +116,23 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 startActivityForResult(intent, LOCATION_AUTO_START);
             }
         });
+
+        mResetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mDistanceMeterService.stopUpdates();
+                mDistanceMeterService.deleteHistory();
+                mLongitudeTextView.setText("0.00");
+                mLatitudeTextView.setText("0.00");
+            }
+        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "Activity resumed");
+        startServiceIntent = new Intent(this, DistanceMeterService.class);
+        bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -158,6 +174,22 @@ public class MainActivity extends AppCompatActivity implements Observer{
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (!isRunning) {
+            mDistanceMeterService.deleteHistory();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(RUNNING_STATE, isRunning);
+        outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
+        outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
+    }
+
     private void showAlert() {
         final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("Enable Location")
@@ -167,7 +199,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
                     public void onClick(DialogInterface dialog, int which) {
                         Intent locationIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                         startActivity(locationIntent);
-                        mDistanceMeterService.configureGPS();
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

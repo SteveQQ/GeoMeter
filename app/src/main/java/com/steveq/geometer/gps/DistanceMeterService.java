@@ -53,7 +53,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
     public void onCreate() {
         super.onCreate();
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        configureGPS();
         mObservers = new ArrayList<>();
         mHistory = new History();
         outputJson = new File(getFilesDir(), "history_loc.json");
@@ -116,7 +115,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         return latitude;
     }
 
-    public void configureGPS() {
+    synchronized public void configureGPS() {
         Criteria configuration = buildCriteria();
         List<String> providers = mLocationManager.getProviders(configuration, true);
         if(providers == null || providers.size() == 0){

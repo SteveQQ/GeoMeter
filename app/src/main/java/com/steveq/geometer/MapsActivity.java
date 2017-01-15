@@ -48,6 +48,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 mDistanceMeterService.addObserver(MapsActivity.this);
                 isBound = true;
+                if(mDistanceMeterService.outputJson.exists()){
+                    mDistanceMeterService.startLocationUpdates();
+                }
             }
 
             @Override
@@ -128,19 +131,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng initCurrent = new LatLng(intent.getDoubleExtra("initial_lat", 0), intent.getDoubleExtra("initial_long", 0));
         mMap.addMarker(new MarkerOptions().position(initCurrent).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
-        if(mDistanceMeterService.outputJson.exists()){
-            mDistanceMeterService.startLocationUpdates();
-        }
     }
 
     @Override
     public void update(double latitude, double longitude) {
 
-
-
         LatLng current = new LatLng(latitude, longitude);
         mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
-
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
     }
