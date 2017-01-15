@@ -52,9 +52,9 @@ public class MainActivity extends AppCompatActivity implements Observer{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(MainActivity.this);
-        requestPermission();
         mLongitudeTextView.setText("0.00");
         mLatitudeTextView.setText("0.00");
+        requestPermission();
 
         mConnection = new ServiceConnection() {
             @Override
@@ -111,8 +111,8 @@ public class MainActivity extends AppCompatActivity implements Observer{
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-                intent.putExtra("initial_lat", mDistanceMeterService.getLatitude());
-                intent.putExtra("initial_long", mDistanceMeterService.getLongitude());
+//                intent.putExtra("initial_lat", mDistanceMeterService.getLatitude());
+//                intent.putExtra("initial_long", mDistanceMeterService.getLongitude());
                 startActivityForResult(intent, LOCATION_AUTO_START);
             }
         });
@@ -126,13 +126,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 mLatitudeTextView.setText("0.00");
             }
         });
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        startServiceIntent = new Intent(this, DistanceMeterService.class);
-        bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
     }
 
     @Override
@@ -164,6 +157,16 @@ public class MainActivity extends AppCompatActivity implements Observer{
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "Activity Resume");
+        if(isAllowed) {
+            startServiceIntent = new Intent(this, DistanceMeterService.class);
+            bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (isBound) {
@@ -185,9 +188,11 @@ public class MainActivity extends AppCompatActivity implements Observer{
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putBoolean(RUNNING_STATE, isRunning);
-        outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
-        outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
+        if (mDistanceMeterService != null && mDistanceMeterService.outputJson.exists()) {
+            outState.putBoolean(RUNNING_STATE, isRunning);
+            outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
+            outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
+        }
     }
 
     private void showAlert() {

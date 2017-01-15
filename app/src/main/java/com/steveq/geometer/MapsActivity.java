@@ -15,10 +15,13 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.steveq.geometer.gps.DistanceMeterService;
 import com.steveq.geometer.obs_pattern.Observer;
 
@@ -36,6 +39,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Intent startServiceIntent;
     private SupportMapFragment mapFragment;
     private MarkerOptions mTempMarker;
+    private Marker currentMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,21 +145,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        mMap.getUiSettings().setZoomControlsEnabled(true);
         // Add a marker in Sydney and move the camera
-        Intent intent = getIntent();
-        LatLng initCurrent = new LatLng(intent.getDoubleExtra("initial_lat", 0), intent.getDoubleExtra("initial_long", 0));
-        mMap.addMarker(new MarkerOptions().position(initCurrent).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
-        mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
+        LatLng initCurrent = new LatLng(0, 0);
+        if(mDistanceMeterService.outputJson.exists()){
+            initCurrent = new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude(), mDistanceMeterService.mHistory.getLast().getLongitude());
+            currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
+            mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
+        } else {
+            currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
+        }
     }
 
     @Override
     public void update(double latitude, double longitude) {
 
         LatLng current = new LatLng(latitude, longitude);
-        mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
+        if(currentMarker != null) {
+            currentMarker.remove();
+        }
+        currentMarker = mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
     }

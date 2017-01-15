@@ -116,7 +116,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         return latitude;
     }
 
-    synchronized public void configureGPS() {
+    public void configureGPS() {
         Criteria configuration = buildCriteria();
         List<String> providers = mLocationManager.getProviders(configuration, true);
         if(providers == null || providers.size() == 0){
