@@ -15,7 +15,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.steveq.geometer.gps.DistanceMeterService;
 import com.steveq.geometer.obs_pattern.Observer;
@@ -24,6 +26,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 12;
     private static final String TAG = MapsActivity.class.getSimpleName();
+    private static LatLngBounds CURRENT_BOUNDS;
+    private static CameraPosition CURRENT_POSITION;
     private GoogleMap mMap;
 
     private ServiceConnection mConnection;
@@ -48,8 +52,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 mDistanceMeterService.addObserver(MapsActivity.this);
                 isBound = true;
-                if(mDistanceMeterService.outputJson.exists()){
-                    mDistanceMeterService.startLocationUpdates();
+                if(mDistanceMeterService.outputJson.exists()) {
+                    if (MainActivity.isRunning) {
+                        mDistanceMeterService.startLocationUpdates();
+                    }
+                    CURRENT_BOUNDS = new LatLngBounds(
+                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()-0.02, mDistanceMeterService.mHistory.getLast().getLongitude()-0.02),
+                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()+0.02, mDistanceMeterService.mHistory.getLast().getLongitude()+0.02)
+                    );
+                    CURRENT_POSITION = new CameraPosition.Builder()
+                            .target(new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude(), mDistanceMeterService.mHistory.getLast().getLongitude()))
+                            .zoom(18.0f)
+                            .bearing(0)
+                            .tilt(0)
+                            .build();
                 }
             }
 
@@ -131,6 +147,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng initCurrent = new LatLng(intent.getDoubleExtra("initial_lat", 0), intent.getDoubleExtra("initial_long", 0));
         mMap.addMarker(new MarkerOptions().position(initCurrent).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
+        mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
     }
 
     @Override

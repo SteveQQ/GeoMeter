@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private boolean isBound = false;
     public static boolean isAllowed = false;
     private Intent startServiceIntent;
-    private boolean isRunning = false;
+    public static boolean isRunning = false;
     private static String RUNNING_STATE = "RUNNING_STATE";
     private static String LAST_LATITUDE = "LAST_LATITUDE";
     private static String LAST_LONGITUDE = "LAST_LONGITUDE";

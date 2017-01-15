@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.google.gson.Gson;
+import com.steveq.geometer.MainActivity;
 import com.steveq.geometer.model.History;
 import com.steveq.geometer.obs_pattern.Observable;
 import com.steveq.geometer.obs_pattern.Observer;
@@ -139,6 +140,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         return startLocationUpdates(MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES);
     }
 
+    @SuppressWarnings("MissingPermission")
     public boolean startLocationUpdates(int time, int distance){
         if(mProvider == null){
             return false;
@@ -150,6 +152,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         return false;
     }
 
+    @SuppressWarnings("MissingPermission")
     public void stopUpdates() {
         mLocationManager.removeUpdates(this);
     }
