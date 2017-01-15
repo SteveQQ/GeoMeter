@@ -23,7 +23,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.steveq.geometer.gps.DistanceMeterService;
+import com.steveq.geometer.model.Location;
 import com.steveq.geometer.obs_pattern.Observer;
+
+import java.util.ArrayList;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, Observer {
 
@@ -170,5 +173,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         currentMarker = mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
+        drawTrace();
+    }
+
+    private void drawTrace() {
+        ArrayList<Location> pointsCollection = mDistanceMeterService.mHistory.getLocationHistory();
+        for(int i=0; i < pointsCollection.size()-1; i++){
+            mMap.addPolyline((new PolylineOptions())
+                    .add(
+                            new LatLng(
+                                    pointsCollection.get(i).getLatitude(),
+                                    pointsCollection.get(i).getLongitude()
+                            ),
+                            new LatLng(
+                                    pointsCollection.get(i+1).getLatitude(),
+                                    pointsCollection.get(i+1).getLongitude()
+                            )
+                    ));
+        }
     }
 }

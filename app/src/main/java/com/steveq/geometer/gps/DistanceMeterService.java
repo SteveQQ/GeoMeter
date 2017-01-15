@@ -82,6 +82,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
     }
 
     public boolean deleteHistory(){
+        mHistory = null;
         return outputJson.delete();
     }
 
@@ -165,7 +166,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
     public void onLocationChanged(Location location) {
         this.latitude = location.getLatitude();
         this.longitude = location.getLongitude();
-        notifyObservers();
         Log.d(TAG, "latitude: " + latitude);
         Log.d(TAG, "longitude: " + longitude);
 
@@ -183,6 +183,8 @@ public class DistanceMeterService extends Service implements LocationListener, O
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        notifyObservers();
     }
 
     @Override

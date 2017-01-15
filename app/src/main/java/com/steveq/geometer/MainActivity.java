@@ -19,6 +19,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.steveq.geometer.gps.DistanceMeterService;
+import com.steveq.geometer.model.History;
 import com.steveq.geometer.obs_pattern.Observer;
 
 import butterknife.BindView;
@@ -90,6 +91,9 @@ public class MainActivity extends AppCompatActivity implements Observer{
             @Override
             public void onClick(View v) {
                 if(mDistanceMeterService.isProvider() && isAllowed) {
+                    if(mDistanceMeterService.mHistory == null){
+                        mDistanceMeterService.mHistory = new History();
+                    }
                     mDistanceMeterService.addObserver(MainActivity.this);
                     mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
                     isRunning = true;
