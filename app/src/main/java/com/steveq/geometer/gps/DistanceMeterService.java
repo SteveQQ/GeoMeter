@@ -137,7 +137,8 @@ public class DistanceMeterService extends Service implements LocationListener, O
             return false;
         }
         if (mLocationManager.isProviderEnabled(mProvider)) {
-            mLocationManager.requestLocationUpdates(mProvider, 100000000, distance, this);
+            //mLocationManager.requestLocationUpdates(mProvider, 100000000, distance, this);
+            mLocationManager.requestLocationUpdates(mProvider, time, distance, this);
             return true;
         }
         return false;
