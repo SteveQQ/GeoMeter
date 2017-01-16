@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private static String RUNNING_STATE = "RUNNING_STATE";
     private static String LAST_LATITUDE = "LAST_LATITUDE";
     private static String LAST_LONGITUDE = "LAST_LONGITUDE";
+    private static final String DISTANCE = "DISTANCE";
 
     @BindView(R.id.locateButton) Button mLocateButton;
     @BindView(R.id.stopButton) Button mStopButton;
@@ -84,8 +85,10 @@ public class MainActivity extends AppCompatActivity implements Observer{
         if(savedInstanceState != null){
             double lastLatitude = savedInstanceState.getDouble(LAST_LATITUDE);
             double lastLongitude = savedInstanceState.getDouble(LAST_LONGITUDE);
+            int distance = savedInstanceState.getInt(DISTANCE);
             mLatitudeTextView.setText(String.valueOf(lastLatitude));
             mLongitudeTextView.setText(String.valueOf(lastLongitude));
+            mDistanceTextView.setText(String.valueOf(distance));
             isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
         }
 
@@ -199,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
             outState.putBoolean(RUNNING_STATE, isRunning);
             outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
             outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
+            outState.putInt(DISTANCE, mDistanceMeterService.mHistory.getDistance());
         }
     }
 

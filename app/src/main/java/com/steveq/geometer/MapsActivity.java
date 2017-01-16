@@ -64,8 +64,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         mDistanceMeterService.startLocationUpdates();
                     }
                     CURRENT_BOUNDS = new LatLngBounds(
-                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()-0.02, mDistanceMeterService.mHistory.getLast().getLongitude()-0.02),
-                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()+0.02, mDistanceMeterService.mHistory.getLast().getLongitude()+0.02)
+                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()-0.01, mDistanceMeterService.mHistory.getLast().getLongitude()-0.01),
+                            new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()+0.01, mDistanceMeterService.mHistory.getLast().getLongitude()+0.01)
                     );
                     CURRENT_POSITION = new CameraPosition.Builder()
                             .target(new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude(), mDistanceMeterService.mHistory.getLast().getLongitude()))
@@ -154,9 +154,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(mDistanceMeterService.outputJson.exists()){
             initCurrent = new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude(), mDistanceMeterService.mHistory.getLast().getLongitude());
             currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
             mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
+            //mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
         } else {
             currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
@@ -172,7 +172,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
         currentMarker = mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
+        CURRENT_BOUNDS = new LatLngBounds(
+                new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()-0.01, mDistanceMeterService.mHistory.getLast().getLongitude()-0.01),
+                new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude()+0.01, mDistanceMeterService.mHistory.getLast().getLongitude()+0.01)
+        );
+
+        CURRENT_POSITION = new CameraPosition.Builder()
+                .target(new LatLng(mDistanceMeterService.mHistory.getLast().getLatitude(), mDistanceMeterService.mHistory.getLast().getLongitude()))
+                .zoom(18.0f)
+                .bearing(0)
+                .tilt(0)
+                .build();
+
+        mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
+
         drawTrace();
     }
 

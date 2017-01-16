@@ -137,7 +137,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
             return false;
         }
         if (mLocationManager.isProviderEnabled(mProvider)) {
-            mLocationManager.requestLocationUpdates(mProvider, time, distance, this);
+            mLocationManager.requestLocationUpdates(mProvider, 100000000, distance, this);
             return true;
         }
         return false;
@@ -158,6 +158,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         Log.d(TAG, "longitude: " + location.getLongitude());
 
         ArrayList<com.steveq.geometer.model.Location> tempHist = mHistory.getLocationHistory();
+        tempHist.add(new com.steveq.geometer.model.Location(location.getLatitude(), location.getLongitude()));
 
         if(tempHist.size() > 1) {
             float[] results = new float[1];
@@ -167,7 +168,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
             mHistory.setDistance(mHistory.getDistance() + (int)results[0]);
         }
 
-        tempHist.add(new com.steveq.geometer.model.Location(location.getLatitude(), location.getLongitude()));
         mHistory.setLocationHistory(tempHist);
         Log.d(TAG, gson.toJson(mHistory));
 
