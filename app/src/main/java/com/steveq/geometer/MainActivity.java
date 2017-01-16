@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
     @BindView(R.id.longitudeTextView) TextView mLongitudeTextView;
     @BindView(R.id.mapButton) Button mMapButton;
     @BindView(R.id.resetButton) Button mResetButton;
+    @BindView(R.id.distanceTextView) TextView mDistanceTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
         ButterKnife.bind(MainActivity.this);
         mLongitudeTextView.setText("0.00");
         mLatitudeTextView.setText("0.00");
+        mDistanceTextView.setText("0m");
         requestPermission();
 
         mConnection = new ServiceConnection() {
@@ -128,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 mDistanceMeterService.deleteHistory();
                 mLongitudeTextView.setText("0.00");
                 mLatitudeTextView.setText("0.00");
+                mDistanceTextView.setText("0m");
             }
         });
     }
@@ -220,8 +223,9 @@ public class MainActivity extends AppCompatActivity implements Observer{
     }
 
     @Override
-    public void update(double latitude, double longitude) {
+    public void update(double latitude, double longitude, int distance) {
         mLatitudeTextView.setText(String.valueOf(latitude));
         mLongitudeTextView.setText(String.valueOf(longitude));
+        mDistanceTextView.setText(String.format("%d %s", distance, "m"));
     }
 }

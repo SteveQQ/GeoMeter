@@ -60,6 +60,22 @@
             tools:text="1000"/>
     </LinearLayout>
 
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:text="distance"/>
+        <TextView
+            android:id="@+id/distanceTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:text="4000m"/>
+    </LinearLayout>
+
     <Button
         android:id="@+id/mapButton"
         android:layout_width="wrap_content"

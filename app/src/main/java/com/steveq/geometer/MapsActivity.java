@@ -164,7 +164,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void update(double latitude, double longitude) {
+    public void update(double latitude, double longitude, int distance) {
 
         LatLng current = new LatLng(latitude, longitude);
         if(currentMarker != null) {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 public class History {
     private ArrayList<Location> locationHistory;
+    private int distance;
 
     public History() {
         this.locationHistory = new ArrayList<>();
@@ -20,5 +21,13 @@ public class History {
 
     public Location getLast(){
         return locationHistory.get(locationHistory.size()-1);
+    }
+
+    public int getDistance() {
+        return distance;
+    }
+
+    public void setDistance(int distance) {
+        this.distance = distance;
     }
 }

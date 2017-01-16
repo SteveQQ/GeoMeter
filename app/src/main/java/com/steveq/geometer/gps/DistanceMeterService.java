@@ -34,8 +34,6 @@ public class DistanceMeterService extends Service implements LocationListener, O
     public static final int MIN_TIME_BW_UPDATES = 2 * 1000; //2 seconds
     private String mProvider;
 
-    private double longitude;
-    private double latitude;
     private ArrayList<Observer> mObservers;
 
     private Gson gson = new Gson();
@@ -105,16 +103,8 @@ public class DistanceMeterService extends Service implements LocationListener, O
     @Override
     public void notifyObservers() {
         for(Observer obs : mObservers){
-            obs.update(this.latitude, this.longitude);
+            obs.update(mHistory.getLast().getLatitude(), mHistory.getLast().getLongitude(), mHistory.getDistance());
         }
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public double getLatitude() {
-        return latitude;
     }
 
     public void configureGPS() {
@@ -164,13 +154,20 @@ public class DistanceMeterService extends Service implements LocationListener, O
 
     @Override
     public void onLocationChanged(Location location) {
-        this.latitude = location.getLatitude();
-        this.longitude = location.getLongitude();
-        Log.d(TAG, "latitude: " + latitude);
-        Log.d(TAG, "longitude: " + longitude);
+        Log.d(TAG, "latitude: " + location.getLatitude());
+        Log.d(TAG, "longitude: " + location.getLongitude());
 
         ArrayList<com.steveq.geometer.model.Location> tempHist = mHistory.getLocationHistory();
-        tempHist.add(new com.steveq.geometer.model.Location(latitude, longitude));
+
+        if(tempHist.size() > 1) {
+            float[] results = new float[1];
+            Location.distanceBetween(tempHist.get(tempHist.size() - 2).getLatitude(), tempHist.get(tempHist.size() - 2).getLongitude(),
+                    mHistory.getLast().getLatitude(), mHistory.getLast().getLongitude(),
+                    results);
+            mHistory.setDistance(mHistory.getDistance() + (int)results[0]);
+        }
+
+        tempHist.add(new com.steveq.geometer.model.Location(location.getLatitude(), location.getLongitude()));
         mHistory.setLocationHistory(tempHist);
         Log.d(TAG, gson.toJson(mHistory));
 
@@ -183,6 +180,7 @@ public class DistanceMeterService extends Service implements LocationListener, O
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
         notifyObservers();
     }
