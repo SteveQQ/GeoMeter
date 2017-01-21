@@ -6,16 +6,21 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.icu.text.DecimalFormat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.steveq.geometer.gps.DistanceMeterService;
@@ -41,9 +46,10 @@ public class MainActivity extends AppCompatActivity implements Observer{
     private static String LAST_LATITUDE = "LAST_LATITUDE";
     private static String LAST_LONGITUDE = "LAST_LONGITUDE";
     private static final String DISTANCE = "DISTANCE";
+    private static final String LOCATE_CHECKED = "LOCATE_CHECKED";
 
-    @BindView(R.id.locateButton) Button mLocateButton;
-    @BindView(R.id.stopButton) Button mStopButton;
+
+    @BindView(R.id.enableLocalizationSwitch) Switch mLocalizationSwitch;
     @BindView(R.id.latitudeTextView) TextView mLatitudeTextView;
     @BindView(R.id.longitudeTextView) TextView mLongitudeTextView;
     @BindView(R.id.mapButton) Button mMapButton;
@@ -70,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 if (mDistanceMeterService != null) {
                     mDistanceMeterService.configureGPS();
                 }
-                if(mDistanceMeterService.outputJson.exists() && isAllowed){
+                if(mDistanceMeterService.outputJson.exists() && isRunning){
                     mDistanceMeterService.addObserver(MainActivity.this);
                     mDistanceMeterService.startLocationUpdates();
                 }
@@ -88,31 +94,29 @@ public class MainActivity extends AppCompatActivity implements Observer{
             int distance = savedInstanceState.getInt(DISTANCE);
             mLatitudeTextView.setText(String.valueOf(lastLatitude));
             mLongitudeTextView.setText(String.valueOf(lastLongitude));
-            mDistanceTextView.setText(String.valueOf(distance));
+            mDistanceTextView.setText(String.format("%d %s", distance, "m"));
             isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
+            mLocalizationSwitch.setChecked(savedInstanceState.getBoolean(LOCATE_CHECKED));
         }
 
-        mLocateButton.setOnClickListener(new View.OnClickListener() {
+        mLocalizationSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                if(mDistanceMeterService.isProvider() && isAllowed) {
-                    if(mDistanceMeterService.mHistory == null){
-                        mDistanceMeterService.mHistory = new History();
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked){
+                    if(mDistanceMeterService.isProvider() && isAllowed) {
+                        if(mDistanceMeterService.mHistory == null){
+                            mDistanceMeterService.mHistory = new History();
+                        }
+                        mDistanceMeterService.addObserver(MainActivity.this);
+                        mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
+                        isRunning = true;
+                    } else {
+                        showAlert();
                     }
-                    mDistanceMeterService.addObserver(MainActivity.this);
-                    mDistanceMeterService.startLocationUpdates(DistanceMeterService.MIN_TIME_BW_UPDATES, DistanceMeterService.MIN_DISTANCE_CHANGE_FOR_UPDATES);
-                    isRunning = true;
-                } else {
-                    showAlert();
+                }else{
+                    mDistanceMeterService.stopUpdates();
+                    isRunning = false;
                 }
-            }
-        });
-
-        mStopButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mDistanceMeterService.stopUpdates();
-                isRunning = false;
             }
         });
 
@@ -143,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == LOCATION_AUTO_START) {
             if (resultCode == RESULT_OK) {
-                mDistanceMeterService.startLocationUpdates();
+                //mDistanceMeterService.startLocationUpdates();
             }
         }
     }
@@ -203,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
             outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
             outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
             outState.putInt(DISTANCE, mDistanceMeterService.mHistory.getDistance());
+            outState.putBoolean(LOCATE_CHECKED, mLocalizationSwitch.isChecked());
         }
     }
 
@@ -228,8 +233,8 @@ public class MainActivity extends AppCompatActivity implements Observer{
 
     @Override
     public void update(double latitude, double longitude, int distance) {
-        mLatitudeTextView.setText(String.valueOf(latitude));
-        mLongitudeTextView.setText(String.valueOf(longitude));
-        mDistanceTextView.setText(String.format("%d %s", distance, "m"));
+        mLatitudeTextView.setText(String.format("%1.6f", latitude));
+        mLongitudeTextView.setText(String.format("%1.6f", longitude));
+        mDistanceTextView.setText(String.format("%d.2 %s", distance, "m"));
     }
 }

@@ -156,6 +156,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
             mMap.setLatLngBoundsForCameraTarget(CURRENT_BOUNDS);
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CURRENT_POSITION));
+            drawTrace();
             //mMap.moveCamera(CameraUpdateFactory.newLatLng(initCurrent));
         } else {
             currentMarker = mMap.addMarker(new MarkerOptions().position(initCurrent).title("Default"));
