@@ -1,6 +1,9 @@
 package com.steveq.geometer;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,6 +18,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -166,8 +170,28 @@ public class MainActivity extends AppCompatActivity implements Observer{
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "Destroyed");
-        if (!isRunning) {
-            mDistanceMeterService.deleteHistory();
+
+        if(isFinishing()){
+            if (!isRunning) {
+                mDistanceMeterService.deleteHistory();
+            }
+
+            Intent intent = new Intent(this, MainActivity.class);
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+            stackBuilder.addParentStack(MainActivity.class);
+            stackBuilder.addNextIntent(intent);
+            PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            Notification.Builder builder = new Notification.Builder(this)
+                                                .setSmallIcon(R.drawable.ic_globe_96)
+                                                .setContentTitle("GeoMeter Waiting")
+                                                .setContentText("Localization Service is suspended")
+                                                .setAutoCancel(true)
+                                                .setContentIntent(pendingIntent);
+
+            NotificationManager nm = (NotificationManager) this.getSystemService(NOTIFICATION_SERVICE);
+            nm.notify(1, builder.build());
+
         }
 
         if(mDistanceMeterService.mHistory != null) {
@@ -181,6 +205,8 @@ public class MainActivity extends AppCompatActivity implements Observer{
             editor.clear();
             editor.commit();
         }
+
+
     }
 
     private void requestPermission() {
