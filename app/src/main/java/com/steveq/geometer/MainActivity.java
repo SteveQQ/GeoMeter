@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.icu.text.DecimalFormat;
 import android.os.Build;
@@ -25,6 +26,7 @@ import android.widget.TextView;
 
 import com.steveq.geometer.gps.DistanceMeterService;
 import com.steveq.geometer.model.History;
+import com.steveq.geometer.model.Location;
 import com.steveq.geometer.obs_pattern.Observer;
 
 import butterknife.BindView;
@@ -42,12 +44,14 @@ public class MainActivity extends AppCompatActivity implements Observer{
     public static boolean isAllowed = false;
     private Intent startServiceIntent;
     public static boolean isRunning = false;
+    private SharedPreferences prefs;
+    private SharedPreferences.Editor editor;
+
     private static String RUNNING_STATE = "RUNNING_STATE";
     private static String LAST_LATITUDE = "LAST_LATITUDE";
     private static String LAST_LONGITUDE = "LAST_LONGITUDE";
     private static final String DISTANCE = "DISTANCE";
     private static final String LOCATE_CHECKED = "LOCATE_CHECKED";
-
 
     @BindView(R.id.enableLocalizationSwitch) Switch mLocalizationSwitch;
     @BindView(R.id.latitudeTextView) TextView mLatitudeTextView;
@@ -61,9 +65,18 @@ public class MainActivity extends AppCompatActivity implements Observer{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(MainActivity.this);
-        mLongitudeTextView.setText("0.00");
-        mLatitudeTextView.setText("0.00");
-        mDistanceTextView.setText("0m");
+        prefs = this.getPreferences(MODE_PRIVATE);
+        editor = prefs.edit();
+
+        double lastLatitude = Double.longBitsToDouble(prefs.getLong(LAST_LATITUDE, 0));
+        double lastLongitude = Double.longBitsToDouble(prefs.getLong(LAST_LONGITUDE, 0));
+        int distance = prefs.getInt(DISTANCE, 0);
+        mLatitudeTextView.setText(String.format("%1.6f", lastLatitude));
+        mLongitudeTextView.setText(String.format("%1.6f", lastLongitude));
+        mDistanceTextView.setText(String.format("%d.2 %s", distance, "m"));
+        isRunning = prefs.getBoolean(RUNNING_STATE, false);
+        mLocalizationSwitch.setChecked(prefs.getBoolean(LOCATE_CHECKED, false));
+
         requestPermission();
 
         mConnection = new ServiceConnection() {
@@ -73,12 +86,18 @@ public class MainActivity extends AppCompatActivity implements Observer{
 
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
                 isBound = true;
-                if (mDistanceMeterService != null) {
-                    mDistanceMeterService.configureGPS();
-                }
-                if(mDistanceMeterService.outputJson.exists() && isRunning){
-                    mDistanceMeterService.addObserver(MainActivity.this);
-                    mDistanceMeterService.startLocationUpdates();
+
+                mDistanceMeterService.configureGPS();
+
+                if(mDistanceMeterService.outputJson.exists()){
+                    Location last = mDistanceMeterService.mHistory.getLast();
+//                    mLatitudeTextView.setText(String.valueOf(last.getLatitude()));
+//                    mLongitudeTextView.setText(String.valueOf(last.getLongitude()));
+//                    mDistanceTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getDistance()));
+                    if(isRunning) {
+                        mDistanceMeterService.addObserver(MainActivity.this);
+                        mDistanceMeterService.startLocationUpdates();
+                    }
                 }
             }
 
@@ -88,16 +107,16 @@ public class MainActivity extends AppCompatActivity implements Observer{
             }
         };
 
-        if(savedInstanceState != null){
-            double lastLatitude = savedInstanceState.getDouble(LAST_LATITUDE);
-            double lastLongitude = savedInstanceState.getDouble(LAST_LONGITUDE);
-            int distance = savedInstanceState.getInt(DISTANCE);
-            mLatitudeTextView.setText(String.valueOf(lastLatitude));
-            mLongitudeTextView.setText(String.valueOf(lastLongitude));
-            mDistanceTextView.setText(String.format("%d %s", distance, "m"));
-            isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
-            mLocalizationSwitch.setChecked(savedInstanceState.getBoolean(LOCATE_CHECKED));
-        }
+//        if(savedInstanceState != null){
+//            double lastLatitude = savedInstanceState.getDouble(LAST_LATITUDE);
+//            double lastLongitude = savedInstanceState.getDouble(LAST_LONGITUDE);
+//            int distance = savedInstanceState.getInt(DISTANCE);
+//            mLatitudeTextView.setText(String.valueOf(lastLatitude));
+//            mLongitudeTextView.setText(String.valueOf(lastLongitude));
+//            mDistanceTextView.setText(String.format("%d %s", distance, "m"));
+//            isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
+//            mLocalizationSwitch.setChecked(savedInstanceState.getBoolean(LOCATE_CHECKED));
+//        }
 
         mLocalizationSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -143,34 +162,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == LOCATION_AUTO_START) {
-            if (resultCode == RESULT_OK) {
-                //mDistanceMeterService.startLocationUpdates();
-            }
-        }
-    }
-
-    private void requestPermission() {
-        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    MY_PERMISSION_ACCESS_FINE_LOCATION);
-        } else {
-            isAllowed = true;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if(requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION){
-            isAllowed = true;
-        }
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "Activity Resume");
@@ -198,17 +189,45 @@ public class MainActivity extends AppCompatActivity implements Observer{
         if (!isRunning) {
             mDistanceMeterService.deleteHistory();
         }
+
+        if(mDistanceMeterService.mHistory != null) {
+            editor.putBoolean(RUNNING_STATE, isRunning);
+            editor.putLong(LAST_LATITUDE, Double.doubleToLongBits(mDistanceMeterService.mHistory.getLast().getLatitude()));
+            editor.putLong(LAST_LONGITUDE, Double.doubleToLongBits(mDistanceMeterService.mHistory.getLast().getLongitude()));
+            editor.putInt(DISTANCE, mDistanceMeterService.mHistory.getDistance());
+            editor.putBoolean(LOCATE_CHECKED, mLocalizationSwitch.isChecked());
+            editor.commit();
+        } else {
+            editor.clear();
+            editor.commit();
+        }
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (mDistanceMeterService != null && mDistanceMeterService.outputJson.exists()) {
-            outState.putBoolean(RUNNING_STATE, isRunning);
-            outState.putDouble(LAST_LATITUDE, mDistanceMeterService.mHistory.getLast().getLatitude());
-            outState.putDouble(LAST_LONGITUDE, mDistanceMeterService.mHistory.getLast().getLongitude());
-            outState.putInt(DISTANCE, mDistanceMeterService.mHistory.getDistance());
-            outState.putBoolean(LOCATE_CHECKED, mLocalizationSwitch.isChecked());
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == LOCATION_AUTO_START) {
+            if (resultCode == RESULT_OK) {
+                //mDistanceMeterService.startLocationUpdates();
+            }
+        }
+    }
+
+    private void requestPermission() {
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                    MY_PERMISSION_ACCESS_FINE_LOCATION);
+        } else {
+            isAllowed = true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode == MY_PERMISSION_ACCESS_FINE_LOCATION){
+            isAllowed = true;
         }
     }
 
