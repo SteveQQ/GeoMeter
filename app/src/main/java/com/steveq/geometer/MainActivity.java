@@ -194,6 +194,7 @@ public class MainActivity extends AppCompatActivity implements Observer{
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        Log.d(TAG, "Destroyed");
         if (!isRunning) {
             mDistanceMeterService.deleteHistory();
         }

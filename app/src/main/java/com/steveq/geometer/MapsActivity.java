@@ -57,10 +57,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onServiceConnected(ComponentName name, IBinder service) {
                 Log.d(TAG, "Service connected");
                 mDistanceMeterService = ((DistanceMeterService.DistanceMeterBinder) service).getDistanceMeterService();
-                mDistanceMeterService.addObserver(MapsActivity.this);
                 isBound = true;
                 if(mDistanceMeterService.outputJson.exists()) {
+
+                    if (mDistanceMeterService != null) {
+                        mDistanceMeterService.configureGPS();
+                    }
+
                     if (MainActivity.isRunning) {
+                        Log.d(TAG, "start location updates");
+                        mDistanceMeterService.addObserver(MapsActivity.this);
                         mDistanceMeterService.startLocationUpdates();
                     }
                     CURRENT_BOUNDS = new LatLngBounds(
@@ -74,6 +80,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             .tilt(0)
                             .build();
                 }
+
+                mapFragment.getMapAsync(MapsActivity.this);
             }
 
             @Override
@@ -92,7 +100,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(MainActivity.isAllowed) {
             startServiceIntent = new Intent(this, DistanceMeterService.class);
             bindService(startServiceIntent, mConnection, BIND_AUTO_CREATE);
-            mapFragment.getMapAsync(MapsActivity.this);
         } else {
             requestPermission();
         }
@@ -147,6 +154,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
         mMap.getUiSettings().setZoomControlsEnabled(true);
         // Add a marker in Sydney and move the camera
