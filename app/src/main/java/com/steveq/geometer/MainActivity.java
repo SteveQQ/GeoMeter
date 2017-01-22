@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 10;
-    public static final int LOCATION_AUTO_START = 20;
 
     private ServiceConnection mConnection;
     private DistanceMeterService mDistanceMeterService;
@@ -89,15 +88,9 @@ public class MainActivity extends AppCompatActivity implements Observer{
 
                 mDistanceMeterService.configureGPS();
 
-                if(mDistanceMeterService.outputJson.exists()){
-                    Location last = mDistanceMeterService.mHistory.getLast();
-//                    mLatitudeTextView.setText(String.valueOf(last.getLatitude()));
-//                    mLongitudeTextView.setText(String.valueOf(last.getLongitude()));
-//                    mDistanceTextView.setText(String.valueOf(mDistanceMeterService.mHistory.getDistance()));
-                    if(isRunning) {
-                        mDistanceMeterService.addObserver(MainActivity.this);
-                        mDistanceMeterService.startLocationUpdates();
-                    }
+                if(isRunning) {
+                    mDistanceMeterService.addObserver(MainActivity.this);
+                    mDistanceMeterService.startLocationUpdates();
                 }
             }
 
@@ -106,17 +99,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
                 isBound = false;
             }
         };
-
-//        if(savedInstanceState != null){
-//            double lastLatitude = savedInstanceState.getDouble(LAST_LATITUDE);
-//            double lastLongitude = savedInstanceState.getDouble(LAST_LONGITUDE);
-//            int distance = savedInstanceState.getInt(DISTANCE);
-//            mLatitudeTextView.setText(String.valueOf(lastLatitude));
-//            mLongitudeTextView.setText(String.valueOf(lastLongitude));
-//            mDistanceTextView.setText(String.format("%d %s", distance, "m"));
-//            isRunning = savedInstanceState.getBoolean(RUNNING_STATE);
-//            mLocalizationSwitch.setChecked(savedInstanceState.getBoolean(LOCATE_CHECKED));
-//        }
 
         mLocalizationSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -143,17 +125,15 @@ public class MainActivity extends AppCompatActivity implements Observer{
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, MapsActivity.class);
-//                intent.putExtra("initial_lat", mDistanceMeterService.getLatitude());
-//                intent.putExtra("initial_long", mDistanceMeterService.getLongitude());
-                startActivityForResult(intent, LOCATION_AUTO_START);
+                startActivity(intent);
             }
         });
 
         mResetButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mDistanceMeterService.stopUpdates();
                 mDistanceMeterService.deleteHistory();
+                mDistanceMeterService.resetHistory();
                 mLongitudeTextView.setText("0.00");
                 mLatitudeTextView.setText("0.00");
                 mDistanceTextView.setText("0m");
@@ -200,16 +180,6 @@ public class MainActivity extends AppCompatActivity implements Observer{
         } else {
             editor.clear();
             editor.commit();
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == LOCATION_AUTO_START) {
-            if (resultCode == RESULT_OK) {
-                //mDistanceMeterService.startLocationUpdates();
-            }
         }
     }
 

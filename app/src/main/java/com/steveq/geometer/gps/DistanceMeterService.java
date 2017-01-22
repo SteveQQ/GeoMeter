@@ -84,6 +84,10 @@ public class DistanceMeterService extends Service implements LocationListener, O
         return outputJson.delete();
     }
 
+    public void resetHistory(){
+        mHistory = new History();
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
